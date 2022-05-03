@@ -68,31 +68,21 @@ function getAccessToken(oAuth2Client, callback) {
 }
 
 function playFiles(obj) {
-    if (obj.files.length == 0) {
-      obj.message.channel.send("end");
-      obj.channel.leave(); // <--- Important
-      return;
+
+  obj.drive.files.get(
+    {
+      fileId: obj.files[0].id,
+      alt: "media"
+    },
+    { responseType: "stream" },
+    (err, { data }) => {
+      if (err) throw new Error(err);
+      console.log(obj.files[0]);
+      //obj.message.channel.send(`Playing ${obj.files[0].name}`);
+      const file = fs.createWriteStream(obj.files[0].name)
     }
-    obj.drive.files.get(
-      {
-        fileId: obj.files[0].id,
-        alt: "media"
-      },
-      { responseType: "stream" },
-      (err, { data }) => {
-        if (err) throw new Error(err);
-        console.log(obj.files[0]);
-        obj.message.channel.send(`Playing ${obj.files[0].name}`);
-        obj.connection
-          .playStream(data)
-          .on("end", () => {
-            obj.files.shift();
-            playFiles(obj);
-          })
-          .on("error", err => console.log(err));
-      }
-    );
-  }
+  );
+}
 
 const folderId = "1UoZYNC3drfgiXR1GTvcbfn0PlKBiO0Ay"; // Please set the folder ID of Google Drive.
 const {GuildMember} = require('discord.js');
@@ -109,15 +99,52 @@ module.exports = {
       },
     ],
     async execute(interaction, player) {
-        
-        console.log("start");
-        
-        const { data } = await drive.files.get(
-            {
-                fileId: '1UoZYNC3drfgiXR1GTvcbfn0PlKBiO0Ay',
-                alt: "media"
-            },
-            { responseType: "stream" }
-        )
+      try {
+        interaction.reply({
+          content: 'Start!',
+          ephemeral: true,
+        });
+        if (!(interaction.member instanceof GuildMember) || !interaction.member.voice.channel) {
+          return void interaction.reply({
+            content: 'You are not in a voice channel!',
+            ephemeral: true,
+          });
+        }
+  
+        if (
+          interaction.guild.me.voice.channelId &&
+          interaction.member.voice.channelId !== interaction.guild.me.voice.channelId
+        ) {
+          return void interaction.reply({
+            content: 'You are not in my voice channel!',
+            ephemeral: true,
+          });
+        }  
+        drive.files.list(
+          {
+            q: `"1UoZYNC3drfgiXR1GTvcbfn0PlKBiO0Ay" in parents`,
+            fields: "files(id,name)"
+          },
+          (err, { data }) => {
+            if (err) throw new Error(err);
+            connection => {
+              let obj = {
+                drive: drive,
+                files: data.files
+              };
+              playFiles(obj);
+            }
+          }
+        );
+      } catch (error) {
+        interaction.reply({
+          content: 'You are not in a voice channel!',
+          ephemeral: true,
+        });
+        console.log(error);
+        interaction.followUp({
+          content: 'There was an error trying to execute that command: ' + error.message,
+        });
+      }
     }
  }
