@@ -68,7 +68,6 @@ function getAccessToken(oAuth2Client, callback) {
 }
 
 function playFiles(obj) {
-
   obj.drive.files.get(
     {
       fileId: obj.files[0].id,
@@ -100,17 +99,13 @@ module.exports = {
     ],
     async execute(interaction, player) {
       try {
-        interaction.reply({
-          content: 'Start!',
-          ephemeral: true,
-        });
         if (!(interaction.member instanceof GuildMember) || !interaction.member.voice.channel) {
           return void interaction.reply({
             content: 'You are not in a voice channel!',
             ephemeral: true,
           });
         }
-  
+        console.log('123');
         if (
           interaction.guild.me.voice.channelId &&
           interaction.member.voice.channelId !== interaction.guild.me.voice.channelId
@@ -119,23 +114,28 @@ module.exports = {
             content: 'You are not in my voice channel!',
             ephemeral: true,
           });
-        }  
-        drive.files.list(
+        }
+        const {data} = drive.files.list(
           {
             q: `"1UoZYNC3drfgiXR1GTvcbfn0PlKBiO0Ay" in parents`,
             fields: "files(id,name)"
-          },
-          (err, { data }) => {
-            if (err) throw new Error(err);
-            connection => {
-              let obj = {
-                drive: drive,
-                files: data.files
-              };
-              playFiles(obj);
-            }
-          }
-        );
+          });
+          console.log('1233');
+        try {
+          if (!queue.connection) await queue.connect(interaction.member.voice.channel);
+        } catch {
+          void player.deleteQueue(interaction.guildId);
+          return void interaction.followUp({
+            content: 'Could not join your voice channel!',
+          });
+        }
+        let obj = {
+          drive: drive,
+          files: data.files
+        };
+        console.log('12333');
+        playFiles(obj);
+        console.log('123333');
       } catch (error) {
         interaction.reply({
           content: 'You are not in a voice channel!',
@@ -146,5 +146,6 @@ module.exports = {
           content: 'There was an error trying to execute that command: ' + error.message,
         });
       }
+      
     }
  }

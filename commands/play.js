@@ -52,7 +52,7 @@ module.exports = {
 			},
         metadata: interaction.channel,
       });
-
+      
       try {
         if (!queue.connection) await queue.connect(interaction.member.voice.channel);
       } catch {
