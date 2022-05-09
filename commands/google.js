@@ -4,6 +4,7 @@
 const fs = require('fs');
 const readline = require('readline');
 const {google} = require('googleapis');
+const {QueryType} = require('discord-player');
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const TOKEN_PATH = 'token.json';
 
@@ -67,20 +68,27 @@ function getAccessToken(oAuth2Client, callback) {
   });
 }
 
-function playFiles(obj) {
-  obj.drive.files.get(
+async function playFiles(obj) {
+  console.log(obj.files[0].id);
+
+  const {data} = await obj.drive.files.get(
     {
       fileId: obj.files[0].id,
       alt: "media"
     },
     { responseType: "stream" },
-    (err, { data }) => {
-      if (err) throw new Error(err);
-      console.log(obj.files[0]);
-      //obj.message.channel.send(`Playing ${obj.files[0].name}`);
-      const file = fs.createWriteStream(obj.files[0].name)
-    }
   );
+  
+  //const fileName = obj.files[0].id + "." + mimeType.split("/")[1];
+  //const file = fs.createWriteStream(fileName)
+  
+  // if (err) throw new Error(err);
+  /*
+  await obj.interaction.followUp({
+        content: `⏱ | Loading your ${obj.files[0].name}...`,
+  });*/
+  obj.queue.addTrack(data)
+  //const file = fs.createWriteStream(obj.files[0].name)
 }
 
 const folderId = "1UoZYNC3drfgiXR1GTvcbfn0PlKBiO0Ay"; // Please set the folder ID of Google Drive.
@@ -105,7 +113,7 @@ module.exports = {
             ephemeral: true,
           });
         }
-        console.log('123');
+        console.log('1');
         if (
           interaction.guild.me.voice.channelId &&
           interaction.member.voice.channelId !== interaction.guild.me.voice.channelId
@@ -115,12 +123,27 @@ module.exports = {
             ephemeral: true,
           });
         }
-        const {data} = drive.files.list(
-          {
-            q: `"1UoZYNC3drfgiXR1GTvcbfn0PlKBiO0Ay" in parents`,
-            fields: "files(id,name)"
-          });
-          console.log('1233');
+
+        /*
+        const list = await drive.files.list(
+        {
+          q: `"1UoZYNC3drfgiXR1GTvcbfn0PlKBiO0Ay" in parents`,
+          fields: "files(id,name)"
+        });
+        console.log('2');
+        const files = list.data.files;
+        */
+          
+        const queue = await player.createQueue(interaction.guild, {
+            ytdlOptions: {
+            quality: "highest",
+            filter: "audioonly",
+            highWaterMark: 1 << 25,
+            dlChunkSize: 0,
+          },
+            metadata: interaction.channel,
+        });
+        
         try {
           if (!queue.connection) await queue.connect(interaction.member.voice.channel);
         } catch {
@@ -129,12 +152,26 @@ module.exports = {
             content: 'Could not join your voice channel!',
           });
         }
-        let obj = {
-          drive: drive,
-          files: data.files
-        };
+
+        drive.files.list(
+          {
+            q: `"1UoZYNC3drfgiXR1GTvcbfn0PlKBiO0Ay" in parents`,
+            fields: "files(id,name)"
+          },
+          (err, { data }) => {
+            if (err) throw new Error(err);
+              let obj = {
+                drive: drive,
+                interaction: interaction,
+                queue: queue,
+                files: data.files
+              };
+              playFiles(obj);
+            }
+          );
+
         console.log('12333');
-        playFiles(obj);
+        //playFiles(obj);
         console.log('123333');
       } catch (error) {
         interaction.reply({
