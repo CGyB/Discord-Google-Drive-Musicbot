@@ -68,6 +68,12 @@ function getAccessToken(oAuth2Client, callback) {
   });
 }
 
+async function chooseFile(files){{
+
+}
+
+}
+
 async function playFiles(obj) {
   console.log(obj.files[0].id);
 
@@ -113,7 +119,7 @@ module.exports = {
             ephemeral: true,
           });
         }
-        console.log('1');
+
         if (
           interaction.guild.me.voice.channelId &&
           interaction.member.voice.channelId !== interaction.guild.me.voice.channelId
@@ -123,17 +129,14 @@ module.exports = {
             ephemeral: true,
           });
         }
-
-        /*
+        
         const list = await drive.files.list(
         {
           q: `"1UoZYNC3drfgiXR1GTvcbfn0PlKBiO0Ay" in parents`,
           fields: "files(id,name)"
         });
-        console.log('2');
         const files = list.data.files;
-        */
-          
+        
         const queue = await player.createQueue(interaction.guild, {
             ytdlOptions: {
             quality: "highest",
@@ -153,22 +156,15 @@ module.exports = {
           });
         }
 
-        drive.files.list(
-          {
-            q: `"1UoZYNC3drfgiXR1GTvcbfn0PlKBiO0Ay" in parents`,
-            fields: "files(id,name)"
-          },
-          (err, { data }) => {
-            if (err) throw new Error(err);
-              let obj = {
-                drive: drive,
-                interaction: interaction,
-                queue: queue,
-                files: data.files
-              };
-              playFiles(obj);
-            }
-          );
+        msg = await interaction.channel.send("sample message");
+
+        let obj = {
+          drive: drive,
+          interaction: interaction,
+          queue: queue,
+          files: files
+        }
+        playFiles(obj);
 
         console.log('12333');
         //playFiles(obj);
