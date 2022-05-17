@@ -69,15 +69,23 @@ function getAccessToken(oAuth2Client, callback) {
   });
 }
 
-async function chooseFile(files){{
-
-}
-
+function fileToList(files){
+  str = "";
+  if(files.length>0){
+    str = `1. ${files[0].name}`;
+  }
+  for(i=1;i < files.length;i++){
+    str += `\n${i+1}. ${files[i].name}`;
+  }
+  console.log(str);
+  return str;
 }
 
 async function playFiles(obj, player) {
   console.log(obj.files[0].id);
 
+
+  /*
   const {data} = await obj.drive.files.get(
     {
       fileId: obj.files[0].id,
@@ -85,6 +93,7 @@ async function playFiles(obj, player) {
     },
     { responseType: "stream" },
   );
+<<<<<<< HEAD
 
   const file = fs.createWriteStream(obj.files[0].name)
 
@@ -109,7 +118,8 @@ async function playFiles(obj, player) {
   await obj.interaction.followUp({
         content: `⏱ | Loading your ${obj.files[0].name}...`,
   });*/
-  obj.queue.addTrack(Track)
+  
+  //obj.queue.addTrack(data)
   //const file = fs.createWriteStream(obj.files[0].name)
 }
 
@@ -172,7 +182,7 @@ module.exports = {
           });
         }
 
-        msg = await interaction.channel.send("sample message");
+        //msg = await interaction.channel.send("sample message");
 
         let obj = {
           drive: drive,
@@ -180,11 +190,28 @@ module.exports = {
           queue: queue,
           files: files
         }
+<<<<<<< HEAD
         playFiles(obj,player);
+=======
+        str = fileToList(files);
+        msg = await interaction.channel.send(str);
+        await msg.react(':one:');
+        await msg.react(':two:');
+        await msg.react(':three:');
+        await msg.react(':four:');
+        await msg.react(':five:');
+>>>>>>> 689e3dfbc1777d07303b46fdc3d966f1ae79c7dd
 
-        console.log('12333');
+        await msg.react('1️⃣');
+        await msg.react('2️⃣');
+        await msg.react('3️⃣');
+        await msg.react('4️⃣');
+        await msg.react('5️⃣');
+      
         //playFiles(obj);
-        console.log('123333');
+
+        console.log('123');
+
       } catch (error) {
         interaction.reply({
           content: 'You are not in a voice channel!',
