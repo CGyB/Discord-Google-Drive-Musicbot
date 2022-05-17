@@ -7,6 +7,7 @@ const {google} = require('googleapis');
 const {QueryType} = require('discord-player');
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const TOKEN_PATH = 'token.json';
+const Track = require('discord-player')
 
 let queue = null;
 let filter = null;
@@ -74,7 +75,7 @@ async function chooseFile(files){{
 
 }
 
-async function playFiles(obj) {
+async function playFiles(obj, player) {
   console.log(obj.files[0].id);
 
   const {data} = await obj.drive.files.get(
@@ -84,6 +85,21 @@ async function playFiles(obj) {
     },
     { responseType: "stream" },
   );
+
+  const file = fs.createWriteStream(obj.files[0].name)
+
+  Track.Player = player
+  Track.title = data.title
+  Track.description = "a"
+  Track.author = "b"
+  Track.url = data.webContentLink
+  Track.thumbnail = data.picture
+  Track.duration = data.fileSize
+  Track.views = data.version
+  Track.requestedBy = "kim"
+  Track.Playlist = false
+  Track.raw = file
+
   
   //const fileName = obj.files[0].id + "." + mimeType.split("/")[1];
   //const file = fs.createWriteStream(fileName)
@@ -93,7 +109,7 @@ async function playFiles(obj) {
   await obj.interaction.followUp({
         content: `⏱ | Loading your ${obj.files[0].name}...`,
   });*/
-  obj.queue.addTrack(data)
+  obj.queue.addTrack(Track)
   //const file = fs.createWriteStream(obj.files[0].name)
 }
 
@@ -164,7 +180,7 @@ module.exports = {
           queue: queue,
           files: files
         }
-        playFiles(obj);
+        playFiles(obj,player);
 
         console.log('12333');
         //playFiles(obj);
