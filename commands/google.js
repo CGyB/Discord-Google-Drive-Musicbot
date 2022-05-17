@@ -189,9 +189,9 @@ module.exports = {
           queue: queue,
           files: files
         }
-<<<<<<< HEAD
-        playFiles(obj,player);
-=======
+
+//        playFiles(obj,player);
+
         str = fileToList(files);
         msg = await interaction.channel.send(str);
         await msg.react(':one:');
@@ -199,7 +199,6 @@ module.exports = {
         await msg.react(':three:');
         await msg.react(':four:');
         await msg.react(':five:');
->>>>>>> 689e3dfbc1777d07303b46fdc3d966f1ae79c7dd
 
         await msg.react('1️⃣');
         await msg.react('2️⃣');
