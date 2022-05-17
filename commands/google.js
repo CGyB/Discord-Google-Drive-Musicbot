@@ -93,7 +93,6 @@ async function playFiles(obj, player) {
     },
     { responseType: "stream" },
   );
-<<<<<<< HEAD
 
   const file = fs.createWriteStream(obj.files[0].name)
 
