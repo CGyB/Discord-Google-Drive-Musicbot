@@ -88,13 +88,13 @@ async function playFiles(obj, id, interaction) {
       fileId: id,
       alt: "media"
     },
-    { responseType: "stream" },
+    { responseType: "stream" }
   );
 
   const file = fs.createWriteStream(obj.files[0].name)
 
   if(!(data.name instanceof String)){
-    console.log(data);
+    console.log(typeof data);
   }
   if((interaction.user instanceof User)){
     console.log('User is good');
@@ -106,9 +106,9 @@ async function playFiles(obj, id, interaction) {
   Track.url = "ad"
   Track.thumbnail = "c"
   Track.duration = "100"
-  Track.views = "1"
+  Track.views = 1
   Track.requestedBy = interaction.user
-  Track.raw = file
+  Track.raw = data
 
   //const fileName = obj.files[0].id + "." + mimeType.split("/")[1];
   //const file = fs.createWriteStream(fileName)
