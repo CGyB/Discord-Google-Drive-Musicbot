@@ -7,7 +7,7 @@ const {google} = require('googleapis');
 const {QueryType} = require('discord-player');
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const TOKEN_PATH = 'token.json';
-const Track = require('discord-player')
+const {Track} = require('discord-player')
 
 let queue = null;
 let filter = null;
@@ -81,14 +81,11 @@ function fileToList(files){
   return str;
 }
 
-async function playFiles(obj, player) {
-  console.log(obj.files[0].id);
-
-
-  /*
+async function playFiles(obj, id, interaction) {
+  console.log(id);
   const {data} = await obj.drive.files.get(
     {
-      fileId: obj.files[0].id,
+      fileId: id,
       alt: "media"
     },
     { responseType: "stream" },
@@ -96,19 +93,23 @@ async function playFiles(obj, player) {
 
   const file = fs.createWriteStream(obj.files[0].name)
 
-  Track.Player = player
-  Track.title = data.title
+  if(!(data.name instanceof String)){
+    console.log(data);
+  }
+  if((interaction.user instanceof User)){
+    console.log('User is good');
+  }
+
+  Track.title = "t"
   Track.description = "a"
   Track.author = "b"
-  Track.url = data.webContentLink
-  Track.thumbnail = data.picture
-  Track.duration = data.fileSize
-  Track.views = data.version
-  Track.requestedBy = "kim"
-  Track.Playlist = false
+  Track.url = "ad"
+  Track.thumbnail = "c"
+  Track.duration = "100"
+  Track.views = "1"
+  Track.requestedBy = interaction.user
   Track.raw = file
 
-  
   //const fileName = obj.files[0].id + "." + mimeType.split("/")[1];
   //const file = fs.createWriteStream(fileName)
   
@@ -117,13 +118,12 @@ async function playFiles(obj, player) {
   await obj.interaction.followUp({
         content: `⏱ | Loading your ${obj.files[0].name}...`,
   });*/
-  
-  //obj.queue.addTrack(data)
+
+  obj.queue.addTrack(Track)
   //const file = fs.createWriteStream(obj.files[0].name)
 }
 
-const folderId = "1UoZYNC3drfgiXR1GTvcbfn0PlKBiO0Ay"; // Please set the folder ID of Google Drive.
-const {GuildMember} = require('discord.js');
+const {GuildMember, User} = require('discord.js');
 
 module.exports = {
     name: 'google',
@@ -132,7 +132,7 @@ module.exports = {
       {
         name: 'query',
         type: 3, // 'STRING' Type
-        description: 'The song you want to play',
+        description: 'Id of song you want to play',
         required: true,
       },
     ],
@@ -154,6 +154,8 @@ module.exports = {
             ephemeral: true,
           });
         }
+
+        const id = interaction.options.get('query').value;
         
         const list = await drive.files.list(
         {
@@ -190,23 +192,21 @@ module.exports = {
           files: files
         }
 
-//        playFiles(obj,player);
+//        str = fileToList(files);
+//        msg = await interaction.channel.send(str);
+//        await msg.react(':one:');
+//        await msg.react(':two:');
+//        await msg.react(':three:');
+//        await msg.react(':four:');
+//        await msg.react(':five:');
 
-        str = fileToList(files);
-        msg = await interaction.channel.send(str);
-        await msg.react(':one:');
-        await msg.react(':two:');
-        await msg.react(':three:');
-        await msg.react(':four:');
-        await msg.react(':five:');
-
-        await msg.react('1️⃣');
-        await msg.react('2️⃣');
-        await msg.react('3️⃣');
-        await msg.react('4️⃣');
-        await msg.react('5️⃣');
+//        await msg.react('1️⃣');
+//        await msg.react('2️⃣');
+//        await msg.react('3️⃣');
+//        await msg.react('4️⃣');
+//        await msg.react('5️⃣');
       
-        //playFiles(obj);
+        playFiles(obj, id, interaction);
 
         console.log('123');
 
