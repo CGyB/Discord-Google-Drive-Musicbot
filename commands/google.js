@@ -8,6 +8,7 @@ const {QueryType} = require('discord-player');
 const SCOPES = ['https://www.googleapis.com/auth/drive'];
 const TOKEN_PATH = 'token.json';
 const {Track} = require('discord-player')
+const Discord = require('discord.js');
 
 let queue = null;
 let filter = null;
@@ -69,15 +70,15 @@ function getAccessToken(oAuth2Client, callback) {
   });
 }
 
-function fileToList(files){
+function fileToList(files,page){
   str = "";
   if(files.length>0){
-    str = `1. ${files[0].name}`;
+    str = `1. ${files[page*5+0].name}`;
   }
-  for(i=1;i < files.length;i++){
-    str += `\n${i+1}. ${files[i].name}`;
+  for(i=1;i < files.length-(page*5) && i<5;i++){
+    str += `\n${i+1}. ${files[page*5+i].name}`;
   }
-  console.log(str);
+  str += `\npage ${page+1}/${Math.ceil(files.length/5)}`
   return str;
 }
 
@@ -110,6 +111,7 @@ async function playFiles(obj, id, interaction) {
   Track.requestedBy = interaction.user
   Track.raw = data
 
+  
   //const fileName = obj.files[0].id + "." + mimeType.split("/")[1];
   //const file = fs.createWriteStream(fileName)
   
@@ -163,6 +165,10 @@ module.exports = {
           fields: "files(id,name)"
         });
         const files = list.data.files;
+        maxPage = Math.ceil(files.length/5);
+        console.log(maxPage);
+        page = 0;
+        
         
         const queue = await player.createQueue(interaction.guild, {
             ytdlOptions: {
@@ -191,25 +197,87 @@ module.exports = {
           queue: queue,
           files: files
         }
+        
+       str = fileToList(files,page);
+       embed = new Discord.MessageEmbed()
+        .setColor('RANDOM')
+        .setTitle('list')
+        .setDescription(`${str}`);
+        message = await interaction.reply({embeds: [embed], fetchReply: true });
+       await message.react('1️⃣');
+       await message.react('2️⃣');
+       await message.react('3️⃣');
+       await message.react('4️⃣');
+       await message.react('5️⃣');
+       await message.react('◀️');
+       await message.react('▶️');
 
-//        str = fileToList(files);
-//        msg = await interaction.channel.send(str);
-//        await msg.react(':one:');
-//        await msg.react(':two:');
-//        await msg.react(':three:');
-//        await msg.react(':four:');
-//        await msg.react(':five:');
+      const filter = (reaction, user) => {
+        return ['1️⃣', '2️⃣','3️⃣','4️⃣','5️⃣'].includes(reaction.emoji.name) && user.id === interaction.user.id;
+      };
+      let collector = message.createReactionCollector(filter, { time: 5000 });
 
-//        await msg.react('1️⃣');
-//        await msg.react('2️⃣');
-//        await msg.react('3️⃣');
-//        await msg.react('4️⃣');
-//        await msg.react('5️⃣');
-      
+      collector.on('collect', (reaction, user) => {
+          selected_file = -1;
+          if(user.id ==interaction.user.id){
+            switch(reaction.emoji.name){
+              case '1️⃣':
+                selected_file = files[page*5+0];
+                break;
+              case '2️⃣':
+                selected_file = files[page*5+1];
+                break;
+              case '3️⃣':
+                selected_file = files[page*5+2];
+                break;
+              case '4️⃣':
+                selected_file = files[page*5+3];
+                break;
+              case '5️⃣':
+                selected_file = files[page*5+4];
+                break;
+              case '▶️':
+                if(page<maxPage){
+                  page++;
+                  str = fileToList(files,page);
+                  embed = new Discord.MessageEmbed()
+                    .setColor('RANDOM')
+                    .setTitle('list')
+                    .setDescription(`${str}`);
+                  message.edit({embeds: [embed], fetchReply: true });
+                }
+                break;
+              case '◀️':
+                if(page>0){
+                  page--;
+                  str = fileToList(files,page);
+                  embed = new Discord.MessageEmbed()
+                    .setColor('RANDOM')
+                    .setTitle('list')
+                    .setDescription(`${str}`);
+                  message.edit({embeds: [embed], fetchReply: true });
+                }
+                break;
+            }
+            reaction.users.remove(interaction.user.id);
+            if(selected_file!=-1){
+              let obj = {
+                drive: drive,
+                interaction: interaction,
+                queue: queue,
+                files: selected_file
+              }
+              console.log(`${selected_file.name}`)
+              //playFiles(obj, id, interaction);
+            }
+          }
+        })
+        
+        /*
         playFiles(obj, id, interaction);
 
         console.log('123');
-
+        */
       } catch (error) {
         interaction.reply({
           content: 'You are not in a voice channel!',
