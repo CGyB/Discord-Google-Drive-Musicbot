@@ -82,9 +82,9 @@ function fileToList(files,page){
   return str;
 }
 
-async function playFiles(obj, id, interaction) {
+async function playFiles(name, id, queue, player, interaction) {
   console.log(id);
-  const {data} = await obj.drive.files.get(
+  const data = await drive.files.get(
     {
       fileId: id,
       alt: "media"
@@ -92,37 +92,20 @@ async function playFiles(obj, id, interaction) {
     { responseType: "stream" }
   );
 
-  const file = fs.createWriteStream(obj.files[0].name)
+  let t = new Track(player, {
+    title: name,
+    description: 'none',
+    author: 'none',
+    url: id,
+    requestedBy: interaction.user,
+    thumbnail: 'none',
+    views: 1,
+    duration: 50000,
+    source: data.data,
+  });
 
-  if(!(data.name instanceof String)){
-    console.log(typeof data);
-  }
-  if((interaction.user instanceof User)){
-    console.log('User is good');
-  }
-
-  Track.title = "t"
-  Track.description = "a"
-  Track.author = "b"
-  Track.url = "ad"
-  Track.thumbnail = "c"
-  Track.duration = "100"
-  Track.views = 1
-  Track.requestedBy = interaction.user
-  Track.raw = data
-
-  
-  //const fileName = obj.files[0].id + "." + mimeType.split("/")[1];
-  //const file = fs.createWriteStream(fileName)
-  
-  // if (err) throw new Error(err);
-  /*
-  await obj.interaction.followUp({
-        content: `⏱ | Loading your ${obj.files[0].name}...`,
-  });*/
-
-  obj.queue.addTrack(Track)
-  //const file = fs.createWriteStream(obj.files[0].name)
+  queue.addTrack(t);
+  if (!queue.playing) await queue.play();
 }
 
 const {GuildMember, User} = require('discord.js');
@@ -166,7 +149,6 @@ module.exports = {
         });
         const files = list.data.files;
         maxPage = Math.ceil(files.length/5);
-        console.log(maxPage);
         page = 0;
         
         
@@ -190,13 +172,6 @@ module.exports = {
         }
 
         //msg = await interaction.channel.send("sample message");
-
-        let obj = {
-          drive: drive,
-          interaction: interaction,
-          queue: queue,
-          files: files
-        }
         
        str = fileToList(files,page);
        embed = new Discord.MessageEmbed()
@@ -261,14 +236,8 @@ module.exports = {
             }
             reaction.users.remove(interaction.user.id);
             if(selected_file!=-1){
-              let obj = {
-                drive: drive,
-                interaction: interaction,
-                queue: queue,
-                files: selected_file
-              }
               console.log(`${selected_file.name}`)
-              //playFiles(obj, id, interaction);
+              playFiles(selected_file.name, selected_file.id, queue,player, interaction);
             }
           }
         })

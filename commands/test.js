@@ -144,9 +144,7 @@ const video_player = async (guild, song ,player,interaction) => {
 		queue.delete(guild.id);
 		return;
 	}
-	console.log(song.id);
-  console.log(song.title);
-
+  
   const stream = await drive.files.get(
     {
       fileId: song.id,
@@ -154,12 +152,20 @@ const video_player = async (guild, song ,player,interaction) => {
     },
     { responseType: "stream" }
   );
-  
-  console.log(typeof(stream));
-  console.log(stream)
-  console.log(stream.data)
 
-	const resource = createAudioResource(stream.data, { inputType: StreamType.Arbitrary });
+  let t = new Track(player, {
+    title: 'test7',
+    description: 'none',
+    author: 'none',
+    url: '213',
+    requestedBy: interaction.user,
+    thumbnail: 'none',
+    views: 1,
+    duration: 50000,
+    source: stream.data,
+  });
+  console.log(t.raw)
+	const resource = createAudioResource(t.source, { inputType: StreamType.Arbitrary });
 	player.play(resource);
 	player.on(AudioPlayerStatus.Idle, () => {
 			song_queue.songs.shift();
