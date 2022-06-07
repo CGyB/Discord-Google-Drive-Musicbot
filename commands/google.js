@@ -178,15 +178,16 @@ module.exports = {
             ephemeral: true,
           });
         }
-
         const server_queue = queue.get(interaction.guild.id);
 		    let song = {};
 
         const id = interaction.options.get('query').value;
         
+        console.log(id)
+
         const list = await drive.files.list(
         {
-          q: `"1UoZYNC3drfgiXR1GTvcbfn0PlKBiO0Ay" in parents`,
+          q: `"${id}" in parents`,
           fields: "files(id,name)"
         });
         const files = list.data.files;
