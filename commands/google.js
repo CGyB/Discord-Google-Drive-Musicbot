@@ -124,29 +124,6 @@ function fileToList(files,page){
   return str;
 }
 
-async function playFiles(name, id, queue, player, interaction) {
-  console.log(id);
-  const data = await drive.files.get(
-    {
-      fileId: id,
-      alt: "media"
-    },
-    { responseType: "stream" }
-  );
-
-  let t = new Track(player, {
-    title: name,
-    description: 'none',
-    author: 'none',
-    url: id,
-    requestedBy: interaction.user,
-    thumbnail: 'none',
-    views: 1,
-    duration: 50000,
-    source: data.data,
-  });
-}
-
 const {GuildMember, User} = require('discord.js');
 
 module.exports = {
@@ -182,16 +159,23 @@ module.exports = {
 		    let song = {};
 
         const id = interaction.options.get('query').value;     
-        console.log(id)
 
         const list = await drive.files.list(
         {
-          q: `"${id}" in parents`,
+          q: `"${id}" in parents and (name contains ".mp3" or name contains ".wav")`,
           fields: "files(id,name)"
         });
+    
         const files = list.data.files;
         maxPage = Math.ceil(files.length/5);
         page = 0;
+
+        if(files.length == 0){
+          return void interaction.reply({
+            content: 'There is no file!',
+            ephemeral: true,
+          });
+        }
         
 
         const voiceChannel = interaction.member.voice.channel;
@@ -303,20 +287,10 @@ module.exports = {
             }
           }
         })
-        
-        /*
-        playFiles(obj, id, interaction);
-
-        console.log('123');
-        */
       } catch (error) {
         interaction.reply({
-          content: 'You are not in a voice channel!',
+          content:  'There was an error trying to execute that command: ' + error.message,
           ephemeral: true,
-        });
-        console.log(error);
-        interaction.followUp({
-          content: 'There was an error trying to execute that command: ' + error.message,
         });
       }
     }
