@@ -95,7 +95,7 @@ module.exports = {
       });
       const files = list.data.files;
 
-        song = { title: files[0].name, id: files[0].id};
+      song = { title: files[0].name, id: files[0].id};
 
       queue.set(interaction.guild.id, queue_constructor);
       queue_constructor.songs.push(song);
@@ -144,7 +144,7 @@ const video_player = async (guild, song ,player,interaction) => {
 		queue.delete(guild.id);
 		return;
 	}
-  
+
   const stream = await drive.files.get(
     {
       fileId: song.id,
@@ -153,19 +153,7 @@ const video_player = async (guild, song ,player,interaction) => {
     { responseType: "stream" }
   );
 
-  let t = new Track(player, {
-    title: 'test7',
-    description: 'none',
-    author: 'none',
-    url: '213',
-    requestedBy: interaction.user,
-    thumbnail: 'none',
-    views: 1,
-    duration: 50000,
-    source: stream.data,
-  });
-  console.log(t.raw)
-	const resource = createAudioResource(t.source, { inputType: StreamType.Arbitrary });
+	const resource = createAudioResource(stream.data, { inputType: StreamType.Arbitrary });
 	player.play(resource);
 	player.on(AudioPlayerStatus.Idle, () => {
 			song_queue.songs.shift();

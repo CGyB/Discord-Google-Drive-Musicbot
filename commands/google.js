@@ -10,7 +10,8 @@ const TOKEN_PATH = 'token.json';
 const {Track} = require('discord-player')
 const Discord = require('discord.js');
 
-let queue = null;
+const queue = new Map();
+
 let filter = null;
 let drive = null;
 let collector = null;
@@ -22,6 +23,14 @@ let playList = {
   next : null,
 }
 
+const {
+  AudioPlayerStatus,
+  StreamType,
+  createAudioPlayer,
+  createAudioResource,
+  joinVoiceChannel,
+  getVoiceConnection,
+} = require('@discordjs/voice');
 
 fs.readFile('credentials.json', (err, content) => {
   if (err) return console.log('Error loading client secret file:', err);
@@ -70,6 +79,39 @@ function getAccessToken(oAuth2Client, callback) {
   });
 }
 
+const video_player = async (guild, song ,player,interaction) => {
+	const song_queue = queue.get(guild.id);
+
+	// If no song is left in the server queue. Leave the voice channel and delete the key and value pair from the global queue.
+	if (!song) {
+		const connection = joinVoiceChannel({
+						channelId: interaction.member.voice.channel.id,
+						guildId:  interaction.guild.id,
+						adapterCreator: interaction.guild.voiceAdapterCreator,
+					});
+		connection.destroy();
+		queue.delete(guild.id);
+		return;
+	}
+
+  const stream = await drive.files.get(
+    {
+      fileId: song.id,
+      alt: "media"
+    },
+    { responseType: "stream" }
+  );
+
+	const resource = createAudioResource(stream.data, { inputType: StreamType.Arbitrary });
+	player.play(resource);
+	player.on(AudioPlayerStatus.Idle, () => {
+			song_queue.songs.shift();
+			video_player(guild, song_queue.songs[0],player,interaction);
+		});
+	await song_queue.text_channel.send(`🎶 Now playing **${song.title}**`);
+  
+}
+
 function fileToList(files,page){
   str = "";
   if(files.length>0){
@@ -103,9 +145,6 @@ async function playFiles(name, id, queue, player, interaction) {
     duration: 50000,
     source: data.data,
   });
-
-  queue.addTrack(t);
-  if (!queue.playing) await queue.play();
 }
 
 const {GuildMember, User} = require('discord.js');
@@ -117,7 +156,7 @@ module.exports = {
       {
         name: 'query',
         type: 3, // 'STRING' Type
-        description: 'Id of song you want to play',
+        description: 'folderId of song you want to play',
         required: true,
       },
     ],
@@ -140,6 +179,9 @@ module.exports = {
           });
         }
 
+        const server_queue = queue.get(interaction.guild.id);
+		    let song = {};
+
         const id = interaction.options.get('query').value;
         
         const list = await drive.files.list(
@@ -151,48 +193,30 @@ module.exports = {
         maxPage = Math.ceil(files.length/5);
         page = 0;
         
-        
-        const queue = await player.createQueue(interaction.guild, {
-            ytdlOptions: {
-            quality: "highest",
-            filter: "audioonly",
-            highWaterMark: 1 << 25,
-            dlChunkSize: 0,
-          },
-            metadata: interaction.channel,
-        });
-        
-        try {
-          if (!queue.connection) await queue.connect(interaction.member.voice.channel);
-        } catch {
-          void player.deleteQueue(interaction.guildId);
-          return void interaction.followUp({
-            content: 'Could not join your voice channel!',
-          });
-        }
 
-        //msg = await interaction.channel.send("sample message");
-        
-       str = fileToList(files,page);
-       embed = new Discord.MessageEmbed()
+        const voiceChannel = interaction.member.voice.channel;
+        if(!voiceChannel) return interaction.reply('Could not join your voice channel!');
+
+        str = fileToList(files,page);
+        embed = new Discord.MessageEmbed()
         .setColor('RANDOM')
         .setTitle('list')
         .setDescription(`${str}`);
         message = await interaction.reply({embeds: [embed], fetchReply: true });
-       await message.react('1️⃣');
-       await message.react('2️⃣');
-       await message.react('3️⃣');
-       await message.react('4️⃣');
-       await message.react('5️⃣');
-       await message.react('◀️');
-       await message.react('▶️');
+        await message.react('1️⃣');
+        await message.react('2️⃣');
+        await message.react('3️⃣');
+        await message.react('4️⃣');
+        await message.react('5️⃣');
+        await message.react('◀️');
+        await message.react('▶️');
 
-      const filter = (reaction, user) => {
-        return ['1️⃣', '2️⃣','3️⃣','4️⃣','5️⃣'].includes(reaction.emoji.name) && user.id === interaction.user.id;
-      };
-      let collector = message.createReactionCollector(filter, { time: 5000 });
+        const filter = (reaction, user) => {
+          return ['1️⃣', '2️⃣','3️⃣','4️⃣','5️⃣'].includes(reaction.emoji.name) && user.id === interaction.user.id;
+        };
+        let collector = message.createReactionCollector(filter, { time: 5000 });
 
-      collector.on('collect', (reaction, user) => {
+        collector.on('collect', (reaction, user) => {
           selected_file = -1;
           if(user.id ==interaction.user.id){
             switch(reaction.emoji.name){
@@ -237,7 +261,40 @@ module.exports = {
             reaction.users.remove(interaction.user.id);
             if(selected_file!=-1){
               console.log(`${selected_file.name}`)
-              playFiles(selected_file.name, selected_file.id, queue,player, interaction);
+              song = { title: selected_file.name, id: selected_file.id};
+              
+              if (!server_queue) {
+                const queue_constructor = {
+                  voice_channel: voiceChannel,
+                  text_channel: interaction.channel,
+                  connection: null,
+                  songs: [],
+                };
+                
+                queue.set(interaction.guild.id, queue_constructor);
+                queue_constructor.songs.push(song);
+                const player = createAudioPlayer();
+                try {
+                  const connection = joinVoiceChannel({
+                    channelId: voiceChannel.id,
+                    guildId:  interaction.guild.id,
+                    adapterCreator: interaction.guild.voiceAdapterCreator,
+                  });
+                  connection.subscribe(player);
+
+                  queue_constructor.connection = connection;
+                  video_player(interaction.guild, queue_constructor.songs[0],player,interaction);
+                }
+                catch (err) {
+                  queue.delete(interaction.guild.id);
+                  interaction.reply('There was an error connecting!');
+                  throw err;
+                }
+              }
+              else{
+                server_queue.songs.push(song);
+                return interaction.reply(`👍 **${song.title}** added to queue!`);
+              }
             }
           }
         })
@@ -257,6 +314,5 @@ module.exports = {
           content: 'There was an error trying to execute that command: ' + error.message,
         });
       }
-      
     }
  }
