@@ -4,7 +4,12 @@ const Client = require('./client/Client');
 const config = require('./config.json');
 const {Player} = require('discord-player');
 
-const client = new Discord.Client({intents: new Discord.Intents(32767)});
+const client = new Discord.Client({
+  intents: new Discord.Intents(32767),
+  disableMentions: "all",
+  shards:"auto",
+  restTimeOffset: 0
+});
 client.commands = new Discord.Collection();
 
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
