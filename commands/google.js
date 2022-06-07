@@ -178,11 +178,10 @@ module.exports = {
             ephemeral: true,
           });
         }
-        const server_queue = queue.get(interaction.guild.id);
+        let server_queue = queue.get(interaction.guild.id);
 		    let song = {};
 
-        const id = interaction.options.get('query').value;
-        
+        const id = interaction.options.get('query').value;     
         console.log(id)
 
         const list = await drive.files.list(
@@ -266,9 +265,9 @@ module.exports = {
             }
             reaction.users.remove(interaction.user.id);
             if(selected_file!=-1){
-              console.log(`${selected_file.name}`)
+              server_queue = queue.get(interaction.guild.id);
+              console.log(`${selected_file.name}`);
               song = { title: selected_file.name, id: selected_file.id};
-              
               if (!server_queue) {
                 const queue_constructor = {
                   voice_channel: voiceChannel,
@@ -293,13 +292,13 @@ module.exports = {
                 }
                 catch (err) {
                   queue.delete(interaction.guild.id);
-                  interaction.reply('There was an error connecting!');
+                  server_queue.text_channel.send('There was an error connecting!');
                   throw err;
                 }
               }
               else{
                 server_queue.songs.push(song);
-                return interaction.reply(`👍 **${song.title}** added to queue!`);
+                server_queue.text_channel.send(`👍 **${song.title}** added to queue!`);
               }
             }
           }
