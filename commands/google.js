@@ -205,7 +205,7 @@ module.exports = {
         message = await interaction.reply({embeds: [embed], fetchReply: true });
         await message.react('1️⃣');
         await message.react('2️⃣');
-        await message.react('3️⃣');
+        await message.react('3️⃣'); 
         await message.react('4️⃣');
         await message.react('5️⃣');
         await message.react('◀️');
@@ -218,22 +218,27 @@ module.exports = {
 
         collector.on('collect', (reaction, user) => {
           selected_file = -1;
-          if(user.id ==interaction.user.id){
+          if(user.id ==interaction.user.id){ 
             switch(reaction.emoji.name){
               case '1️⃣':
-                selected_file = files[page*5+0];
+                if(files.length > page*5)
+                  selected_file = files[page*5+0];
                 break;
               case '2️⃣':
-                selected_file = files[page*5+1];
+                if(files.length > page*5+1)
+                  selected_file = files[page*5+1];
                 break;
               case '3️⃣':
-                selected_file = files[page*5+2];
+                if(files.length > page*5+2)
+                  selected_file = files[page*5+2];
                 break;
               case '4️⃣':
-                selected_file = files[page*5+3];
+                if(files.length > page*5+3)
+                  selected_file = files[page*5+3];
                 break;
               case '5️⃣':
-                selected_file = files[page*5+4];
+                if(files.length > page*5+4)
+                  selected_file = files[page*5+4];
                 break;
               case '▶️':
                 if(page<maxPage){
