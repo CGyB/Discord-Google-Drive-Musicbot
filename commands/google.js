@@ -32,6 +32,11 @@ const {
   getVoiceConnection,
 } = require('@discordjs/voice');
 
+fs.readFile('credentials.json', (err, content) => {
+  if (err) return console.log('Error loading client secret file:', err);
+  authorize(JSON.parse(content), getDrive);
+});
+
 ///////google drive api OAuth2.0/////////
 function getDrive(auth){
   drive = google.drive({ version: "v3", auth });
@@ -135,10 +140,6 @@ module.exports = {
       },
     ],
     async execute(interaction, player) {
-      fs.readFile('credentials.json', (err, content) => {
-        if (err) return console.log('Error loading client secret file:', err);
-        authorize(JSON.parse(content), getDrive);
-      });
       try {
         if (!(interaction.member instanceof GuildMember) || !interaction.member.voice.channel) {
           return void interaction.reply({
@@ -165,7 +166,7 @@ module.exports = {
         const list = await drive.files.list(
         {
           q: `"${id}" in parents and (name contains ".mp3" or name contains ".wav" or name contains ".m4a"
-          or name contains ".ogg" or name contains ".opus" or name contains ".flac" or name contains ".webm")`,
+          or name contains ".ogg" or name contains ".opus" or name contains ".flac" or name contains ".webm" or name contains ".aac")`,
           fields: "files(id,name)"
         });
     
