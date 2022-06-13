@@ -32,11 +32,7 @@ const {
   getVoiceConnection,
 } = require('@discordjs/voice');
 
-fs.readFile('credentials.json', (err, content) => {
-  if (err) return console.log('Error loading client secret file:', err);
-  authorize(JSON.parse(content), getDrive);
-});
-
+///////google drive api OAuth2.0/////////
 function getDrive(auth){
   drive = google.drive({ version: "v3", auth });
 }
@@ -78,6 +74,7 @@ function getAccessToken(oAuth2Client, callback) {
     });
   });
 }
+///////google drive api OAuth2.0/////////
 
 const video_player = async (guild, song ,player,interaction) => {
 	const song_queue = queue.get(guild.id);
@@ -138,6 +135,10 @@ module.exports = {
       },
     ],
     async execute(interaction, player) {
+      fs.readFile('credentials.json', (err, content) => {
+        if (err) return console.log('Error loading client secret file:', err);
+        authorize(JSON.parse(content), getDrive);
+      });
       try {
         if (!(interaction.member instanceof GuildMember) || !interaction.member.voice.channel) {
           return void interaction.reply({
@@ -155,6 +156,7 @@ module.exports = {
             ephemeral: true,
           });
         }
+
         let server_queue = queue.get(interaction.guild.id);
 		    let song = {};
 
@@ -162,7 +164,8 @@ module.exports = {
 
         const list = await drive.files.list(
         {
-          q: `"${id}" in parents and (name contains ".mp3" or name contains ".wav")`,
+          q: `"${id}" in parents and (name contains ".mp3" or name contains ".wav" or name contains ".m4a"
+          or name contains ".ogg" or name contains ".opus" or name contains ".flac" or name contains ".webm")`,
           fields: "files(id,name)"
         });
     
@@ -177,7 +180,6 @@ module.exports = {
           });
         }
         
-
         const voiceChannel = interaction.member.voice.channel;
         if(!voiceChannel) return interaction.reply('Could not join your voice channel!');
 
@@ -202,7 +204,7 @@ module.exports = {
 
         collector.on('collect', (reaction, user) => {
           selected_file = -1;
-          if(user.id ==interaction.user.id){ 
+          if(user.id == interaction.user.id){ 
             switch(reaction.emoji.name){
               case '1️⃣':
                 if(files.length > page*5)
