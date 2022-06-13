@@ -61,6 +61,11 @@ docker build --tag discordbot .
 docker run -d discordbot
 ```
 
+## How to play Google Drive Music
+
+
+
+
 ## Deploying commands
 
 Before you can use the bots slash command you first need to add them to your Discord server. You can use the `!deploy` command to do so.
